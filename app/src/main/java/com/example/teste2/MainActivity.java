@@ -20,6 +20,10 @@ public class MainActivity extends AppCompatActivity {
     private EditText edtPesquisa;
     private TextView txtResultado;
 
+    private String tituloUltimoLivro = "";
+    private String autorUltimoLivro = "";
+    private android.widget.Button btnIrParaCadastro;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -29,7 +33,7 @@ public class MainActivity extends AppCompatActivity {
         txtResultado = findViewById(R.id.txtResultado);
     }
 
-    // Método disparado pelo clique do Botão (Slide 15/16)
+    // Metodo disparado pelo clique do Botão (Slide 15/16)
     public void buscarLivro(View view) {
         String termoBusca = edtPesquisa.getText().toString().trim();
 
@@ -48,7 +52,7 @@ public class MainActivity extends AppCompatActivity {
                     // Formata o termo digitado para evitar quebras na URL
                     String termoFormatado = URLEncoder.encode(termoBusca, "UTF-8");
 
-                    // Usando o endpoint estável da Open Library limitado a 3 resultados (Livre de Erro 429)
+                    // Usando o endpoint estável da Open Library limitado a 3 resultados
                     String urlString = "https://openlibrary.org/search.json?q=" + termoFormatado + "&limit=3";
 
                     URL url = new URL(urlString);
@@ -80,20 +84,20 @@ public class MainActivity extends AppCompatActivity {
                             // Varre a lista de documentos retornados
                             for (ResultadoLivro.BookDoc doc : resultadoApi.getDocs()) {
 
-                                textoFormatado.append("📖 Título: ").append(doc.getTitle() != null ? doc.getTitle() : "Sem título").append("\n");
+                                textoFormatado.append(" Título: ").append(doc.getTitle() != null ? doc.getTitle() : "Sem título").append("\n");
 
                                 if (doc.getAuthorName() != null && !doc.getAuthorName().isEmpty()) {
-                                    textoFormatado.append("✍️ Autor: ").append(doc.getAuthorName().get(0)).append("\n");
+                                    textoFormatado.append("✍ Autor: ").append(doc.getAuthorName().get(0)).append("\n");
                                 } else {
-                                    textoFormatado.append("✍️ Autor: Desconhecido\n");
+                                    textoFormatado.append("Autor: Desconhecido\n");
                                 }
 
                                 if (doc.getFirstSentence() != null && !doc.getFirstSentence().isEmpty()) {
                                     String resumo = doc.getFirstSentence().get(0);
                                     int limite = Math.min(resumo.length(), 130);
-                                    textoFormatado.append("📝 Fragmento: ").append(resumo.substring(0, limite)).append("...\n");
+                                    textoFormatado.append(" Fragmento: ").append(resumo.substring(0, limite)).append("...\n");
                                 } else {
-                                    textoFormatado.append("📝 Fragmento: Introdução indisponível para este exemplar.\n");
+                                    textoFormatado.append(" Fragmento: Introdução indisponível para este exemplar.\n");
                                 }
 
                                 textoFormatado.append("\n---------------------\n\n");
