@@ -10,53 +10,90 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.GeoPoint;
+
+import java.util.HashMap;
+import java.util.Map;
+
 public class DetalhesLivroActivity extends AppCompatActivity {
 
-    private TextView txtTitulo, txtAutor, txtEditora, txtAno;
+    private TextView txtTituloView, txtAutorView, txtEditoraView, txtAnoView;
     private Spinner spinnerSituacao;
     private RadioGroup radioGroupStatus;
     private EditText edtObservacao;
+
+    // Variáveis para guardar os dados brutos recebidos da Intent
+    private String tituloRaw, autoresRaw, editoraRaw, anoRaw;
+
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detalhes_livro);
 
-        txtTitulo = findViewById(R.id.txtTituloDetalhe);
-        txtAutor = findViewById(R.id.txtAutorDetalhe);
-        txtEditora = findViewById(R.id.txtEditoraDetalhe);
-        txtAno = findViewById(R.id.txtAnoDetalhe);
+        // Inicializar Firestore
+        db = FirebaseFirestore.getInstance();
+
+        txtTituloView = findViewById(R.id.txtTituloDetalhe);
+        txtAutorView = findViewById(R.id.txtAutorDetalhe);
+        txtEditoraView = findViewById(R.id.txtEditoraDetalhe);
+        txtAnoView = findViewById(R.id.txtAnoDetalhe);
         spinnerSituacao = findViewById(R.id.spinnerSituacao);
         radioGroupStatus = findViewById(R.id.radioGroupStatus);
         edtObservacao = findViewById(R.id.edtObservacao);
 
         // Receber dados da Intent
         if (getIntent() != null) {
-            String titulo = getIntent().getStringExtra("titulo");
-            String autor = getIntent().getStringExtra("autor");
-            String editora = getIntent().getStringExtra("editora");
-            int ano = getIntent().getIntExtra("ano", 0);
+            tituloRaw = getIntent().getStringExtra("titulo");
+            autoresRaw = getIntent().getStringExtra("autor");
+            editoraRaw = getIntent().getStringExtra("editora");
+            int anoInt = getIntent().getIntExtra("ano", 0);
+            anoRaw = anoInt != 0 ? String.valueOf(anoInt) : "Indisponível";
 
-            txtTitulo.setText("Título: " + (titulo != null ? titulo : "Indisponível"));
-            txtAutor.setText("Autor: " + (autor != null ? autor : "Desconhecido"));
-            txtEditora.setText("Editora: " + (editora != null ? editora : "Indisponível"));
-            txtAno.setText("Ano de Publicação: " + (ano != 0 ? String.valueOf(ano) : "Indisponível"));
+            txtTituloView.setText("Título: " + (tituloRaw != null ? tituloRaw : "Indisponível"));
+            txtAutorView.setText("Autor: " + (autoresRaw != null ? autoresRaw : "Desconhecido"));
+            txtEditoraView.setText("Editora: " + (editoraRaw != null ? editoraRaw : "Indisponível"));
+            txtAnoView.setText("Ano de Publicação: " + anoRaw);
         }
     }
 
     public void salvarDadosLivro(View view) {
         String situacao = spinnerSituacao.getSelectedItem().toString();
         int selectedId = radioGroupStatus.getCheckedRadioButtonId();
+        
+        if (selectedId == -1) {
+            Toast.makeText(this, "Por favor, selecione um status de leitura.", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        
         RadioButton rbStatus = findViewById(selectedId);
         String status = rbStatus.getText().toString();
         String observacao = edtObservacao.getText().toString();
 
-        // Aqui você pode salvar no Firebase, Banco de Dados local, etc.
-        // Por enquanto, apenas exibimos um Toast com as informações
-        String resumo = "Salvo!\nSituação: " + situacao + "\nStatus: " + status;
-        Toast.makeText(this, resumo, Toast.LENGTH_LONG).show();
+        // Criar o objeto para salvar no Firestore conforme a estrutura solicitada
+        Map<String, Object> livro = new HashMap<>();
+        livro.put("titulo", tituloRaw != null ? tituloRaw : "");
+        livro.put("autores", autoresRaw != null ? autoresRaw : "");
+        livro.put("editora", editoraRaw != null ? editoraRaw : "");
+        livro.put("anoPublicacao", anoRaw);
+        livro.put("observacao", observacao);
+        livro.put("situacao", situacao);
+        livro.put("statusLeitura", status);
         
-        // Finaliza a activity após salvar
-        // finish(); 
+        // Localização padrão 0,0 como solicitado
+        livro.put("localizacao", new GeoPoint(0.0, 0.0));
+
+        // Salvar na coleção "livros"
+        db.collection("livros")
+                .add(livro)
+                .addOnSuccessListener(documentReference -> {
+                    Toast.makeText(this, "Livro salvo com sucesso no Firebase!", Toast.LENGTH_LONG).show();
+                    finish(); // Fecha a tela após salvar
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Erro ao salvar livro: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                });
     }
 }
