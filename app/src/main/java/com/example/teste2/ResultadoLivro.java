@@ -13,6 +13,8 @@ public class ResultadoLivro {
         private String title;
         private List<String> author_name;
         private List<String> first_sentence;
+        private List<String> publisher;
+        private int first_publish_year;
 
         public String getTitle() { return title; }
         public void setTitle(String title) { this.title = title; }
@@ -22,5 +24,11 @@ public class ResultadoLivro {
 
         public List<String> getFirstSentence() { return first_sentence; }
         public void setFirstSentence(List<String> first_sentence) { this.first_sentence = first_sentence; }
+
+        public List<String> getPublisher() { return publisher; }
+        public void setPublisher(List<String> publisher) { this.publisher = publisher; }
+
+        public int getFirstPublishYear() { return first_publish_year; }
+        public void setFirstPublishYear(int first_publish_year) { this.first_publish_year = first_publish_year; }
     }
 }
