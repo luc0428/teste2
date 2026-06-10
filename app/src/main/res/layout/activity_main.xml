@@ -18,7 +18,8 @@
         android:id="@+id/edtPesquisa"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Digite o título, autor ou palavra-chave" />
+        android:hint="Digite o título, autor ou palavra-chave"
+        android:minHeight="48dp" />
 
     <Button
         android:id="@+id/btnBuscar"
@@ -26,12 +27,21 @@
         android:layout_height="wrap_content"
         android:text="Pesquisar Livro"
         android:onClick="buscarLivro"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="8dp"/>
+
+    <Button
+        android:id="@+id/btnCadastrar"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Cadastrar este Livro com GPS"
+        android:onClick="irParaCadastro"
+        android:layout_marginTop="4dp"
         android:layout_marginBottom="16dp"/>
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
         <TextView
             android:id="@+id/txtResultado"
@@ -41,106 +51,4 @@
             android:textSize="16sp" />
     </ScrollView>
 
-    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="16dp">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Cadastrar Livro Geolocalizado"
-            android:textSize="20sp"
-            android:textStyle="bold"
-            android:layout_gravity="center"
-            android:layout_marginBottom="20dp"/>
-
-        <TextView
-            android:id="@+id/txtLivroSelecionado"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Livro: "
-            android:textSize="16sp"
-            android:textStyle="bold"
-            android:layout_marginBottom="8dp"/>
-
-        <TextView
-            android:id="@+id/txtAutorSelecionado"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Autor: "
-            android:textSize="16sp"
-            android:layout_marginBottom="20dp"/>
-
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Onde ou como o livro foi encontrado?"
-            android:textSize="14sp"
-            android:layout_marginTop="12dp"
-            android:layout_marginBottom="4dp"/>
-
-        <Spinner
-            android:id="@+id/spinnerSituacao"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="48dp"
-            android:layout_marginBottom="20dp"/>
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Status de Leitura:"
-            android:textSize="14sp"
-            android:layout_marginBottom="4dp"/>
-
-        <RadioGroup
-            android:id="@+id/radioGroupStatus"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginBottom="20dp">
-
-            <RadioButton
-                android:id="@+id/rbQueroLer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Quero ler"
-                android:checked="true"/>
-
-            <RadioButton
-                android:id="@+id/rbLendo"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Lendo"
-                android:layout_marginStart="12dp"/>
-
-            <RadioButton
-                android:id="@+id/rbConcluido"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Concluído"
-                android:layout_marginStart="12dp"/>
-        </RadioGroup>
-
-        <EditText
-            android:id="@+id/edtObservacao"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:hint="Adicione uma observação pessoal sobre o livro"
-            android:inputType="textMultiLine"
-            android:lines="3"
-            android:gravity="top"
-            android:layout_marginBottom="24dp"/>
-
-        <Button
-            android:id="@+id/btnSalvarCadastro"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Salvar no Aplicativo"
-            android:onClick="salvarDadosLivro"/>
-
-    </LinearLayout>
 </LinearLayout>
