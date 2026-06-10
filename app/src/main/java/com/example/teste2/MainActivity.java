@@ -1,139 +1,129 @@
 package com.example.teste2;
 
-import android.Manifest;
-import android.content.pm.PackageManager;
-import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.TextView;
-import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
 
-// Classes do Google Play Services importadas conforme o Slide 6 da Aula 09
-import com.google.android.gms.location.FusedLocationProviderClient;
-import com.google.android.gms.location.LocationServices;
-import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.gson.Gson;
 
-public class CadastroActivity extends AppCompatActivity {
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLEncoder;
 
-    private TextView txtLivro, txtAutor;
-    private TextView latitudeTextView, longitudeTextView;
+public class MainActivity extends AppCompatActivity {
 
-    // Variáveis globais para armazenar os valores finais do GPS (Desafio 2)
-    private double latitudeAtual = 0.0;
-    private double longitudeAtual = 0.0;
+    private EditText edtPesquisa;
+    private TextView txtResultado;
+
+    private String tituloUltimoLivro = "";
+    private String autorUltimoLivro = "";
+    private android.widget.Button btnIrParaCadastro;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_cadastro);
+        setContentView(R.layout.activity_main);
 
-        // 1. Vinculando os componentes da tela (Slide 5)
-        txtLivro = findViewById(R.id.txtLivroSelecionado);
-        txtAutor = findViewById(R.id.txtAutorSelecionado);
-        latitudeTextView = findViewById(R.id.latitudeTextView);
-        longitudeTextView = findViewById(R.id.longitudeTextView);
-
-        // Recupera o livro enviado pela MainActivity via Intent
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-            txtLivro.setText("Livro: " + extras.getString("CHAVE_TITULO"));
-            txtAutor.setText("Autor: " + extras.getString("CHAVE_AUTOR"));
-        }
-
-        // DISPARO DA LOGICA: Assim que a tela abre, ela tenta ler o GPS
-        obterLocalizacaoDoUsuario();
+        edtPesquisa = findViewById(R.id.edtPesquisa);
+        txtResultado = findViewById(R.id.txtResultado);
     }
 
-    // PARTE 1: Solicitar permissão em tempo de execução (Slide 5)
-    private void obterLocalizacaoDoUsuario() {
-        try {
-            // Verifica se a permissão de localização já foi concedida pelo usuário
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+    // Metodo disparado pelo clique do Botão (Slide 15/16)
+    public void buscarLivro(View view) {
+        String termoBusca = edtPesquisa.getText().toString().trim();
 
-                // Se não foi concedida, abre a caixinha de diálogo do Android perguntando (Código identificador: 200)
-                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 200);
-            } else {
-                // Se o usuário já tinha permitido antes, captura o GPS direto
-                capturarCoordenadasGps();
-            }
-        } catch (Exception e) {
-            Toast.makeText(this, "Erro de permissão: " + e.getMessage(), Toast.LENGTH_LONG).show();
+        if (termoBusca.isEmpty()) {
+            txtResultado.setText("Por favor, insira um termo para buscar.");
+            return;
         }
-    }
 
-    // PARTE 2: Capturar a latitude e longitude atuais (Slide 6 e 7)
-    private void capturarCoordenadasGps() {
-        // Checagem de segurança exigida pelo Android Studio para rodar o cliente de localização
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+        txtResultado.setText("Buscando livros...");
 
-            // Instancia o cliente de localização nativo do Google
-            FusedLocationProviderClient fusedLocationClient = LocationServices.getFusedLocationProviderClient(this);
+        // Nova thread paralela para requisição de rede (Slide 8)
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    // Formata o termo digitado para evitar quebras na URL
+                    String termoFormatado = URLEncoder.encode(termoBusca, "UTF-8");
 
-            // Solicita a última localização conhecida do hardware (Slide 6)
-            fusedLocationClient.getLastLocation().addOnSuccessListener(this, new OnSuccessListener<Location>() {
-                @Override
-                public void onSuccess(Location location) {
-                    // Se o sensor do GPS responder com sucesso e não estiver nulo
-                    if (location != null) {
-                        // Salva as coordenadas do satélite nas nossas variáveis
-                        latitudeAtual = location.getLatitude();
-                        longitudeAtual = location.getLongitude();
+                    // Usando o endpoint estável da Open Library limitado a 3 resultados
+                    String urlString = "https://openlibrary.org/search.json?q=" + termoFormatado + "&limit=3";
 
-                        // Atualiza os componentes visuais para o usuário ver na tela (Slide 7)
-                        latitudeTextView.setText("Latitude: " + latitudeAtual);
-                        longitudeTextView.setText("Longitude: " + longitudeAtual);
+                    URL url = new URL(urlString);
+                    HttpURLConnection conexao = (HttpURLConnection) url.openConnection();
+                    conexao.setRequestMethod("GET"); // Metodo GET (Slide 16)
+                    conexao.setConnectTimeout(10000);
+                    conexao.setReadTimeout(10000);
+
+                    int responseCode = conexao.getResponseCode(); // Status do servidor (Slide 17)
+
+                    if (responseCode == 200) { // HTTP 200 OK (Slide 17)
+                        BufferedReader resposta = new BufferedReader(new InputStreamReader(conexao.getInputStream())); // (Slide 9)
+                        String aux;
+                        StringBuilder jsonEmString = new StringBuilder();
+
+                        while ((aux = resposta.readLine()) != null) { // (Slide 9)
+                            jsonEmString.append(aux);
+                        }
+                        resposta.close();
+
+                        // Convertendo o JSON usando GSON (Slide 10)
+                        Gson gson = new Gson();
+                        ResultadoLivro resultadoApi = gson.fromJson(jsonEmString.toString(), ResultadoLivro.class);
+
+                        StringBuilder textoFormatado = new StringBuilder();
+
+                        if (resultadoApi != null && resultadoApi.getDocs() != null && !resultadoApi.getDocs().isEmpty()) {
+
+                            // Varre a lista de documentos retornados
+                            for (ResultadoLivro.BookDoc doc : resultadoApi.getDocs()) {
+
+                                textoFormatado.append(" Título: ").append(doc.getTitle() != null ? doc.getTitle() : "Sem título").append("\n");
+
+                                if (doc.getAuthorName() != null && !doc.getAuthorName().isEmpty()) {
+                                    textoFormatado.append("✍ Autor: ").append(doc.getAuthorName().get(0)).append("\n");
+                                } else {
+                                    textoFormatado.append("Autor: Desconhecido\n");
+                                }
+
+                                if (doc.getFirstSentence() != null && !doc.getFirstSentence().isEmpty()) {
+                                    String resumo = doc.getFirstSentence().get(0);
+                                    int limite = Math.min(resumo.length(), 130);
+                                    textoFormatado.append(" Fragmento: ").append(resumo.substring(0, limite)).append("...\n");
+                                } else {
+                                    textoFormatado.append(" Fragmento: Introdução indisponível para este exemplar.\n");
+                                }
+
+                                textoFormatado.append("\n---------------------\n\n");
+                            }
+                        } else {
+                            textoFormatado.append("Nenhum livro encontrado para este termo.");
+                        }
+
+                        // Modifica os elementos visuais na UI Thread (Slide 10)
+                        String finalTexto = textoFormatado.toString();
+                        runOnUiThread(new Runnable() {
+                            @Override
+                            public void run() {
+                                txtResultado.setText(finalTexto); // (Slide 10)
+                            }
+                        });
+
                     } else {
-                        Toast.makeText(CadastroActivity.this, "GPS desligado ou indisponível no emulador!", Toast.LENGTH_LONG).show();
-                        latitudeTextView.setText("Latitude: Não disponível");
-                        longitudeTextView.setText("Longitude: Não disponível");
+                        runOnUiThread(() -> txtResultado.setText("Erro no servidor de livros. Código HTTP: " + responseCode));
                     }
+
+                } catch (Exception e) { // Tratamento contra falhas de conexão (Slide 11)
+                    e.printStackTrace();
+                    runOnUiThread(() -> txtResultado.setText("Erro de conexão: " + e.getMessage()));
                 }
-            });
-        }
-    }
-
-    // PARTE 3: Ouvir a resposta da caixinha de permissão
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-
-        // Verifica se a resposta veio da nossa requisição de código 200
-        if (requestCode == 200) {
-            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                // Se o usuário clicou em "Permitir", aciona o GPS imediatamente
-                capturarCoordenadasGps();
-            } else {
-                // Se ele recusou, avisa que o recurso foi bloqueado
-                Toast.makeText(this, "Permissão de GPS recusada! Não mapeamos o livro.", Toast.LENGTH_LONG).show();
-                latitudeTextView.setText("Latitude: Permissão negada");
-                longitudeTextView.setText("Longitude: Permissão negada");
             }
-        }
-    }
-
-    // PARTE 4: Associar as coordenadas capturadas ao Livro ao salvar
-    public void salvarDadosLivro(View view) {
-        String tituloFinal = txtLivro.getText().toString().replace("Livro: ", "");
-        String autorFinal = txtAutor.getText().toString().replace("Autor: ", "");
-
-        // Concatena tudo provando que as coordenadas foram vinculadas com sucesso ao objeto do livro
-        StringBuilder logDados = new StringBuilder();
-        logDados.append("=== LIVRO SALVO COM GEOLOCALIZAÇÃO ===\n")
-                .append("Título: ").append(tituloFinal).append("\n")
-                .append("Autor: ").append(autorFinal).append("\n")
-                .append("Latitude Vinculada: ").append(latitudeAtual).append("\n")
-                .append("Longitude Vinculada: ").append(longitudeAtual);
-
-        Toast.makeText(this, "Livro cadastrado com localização!", Toast.LENGTH_LONG).show();
-
-        // Imprime o resultado final combinado no seu Logcat
-        Log.d("DESAFIO_2_SUCESSO", logDados.toString());
-
-        // Fecha a tela de cadastro e retorna automaticamente para a MainActivity
-        finish();
+        }).start(); // Inicializa a Thread (Slide 11)
     }
 }
