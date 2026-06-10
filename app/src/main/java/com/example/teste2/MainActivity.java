@@ -34,7 +34,11 @@ public class MainActivity extends AppCompatActivity {
         txtStatus = findViewById(R.id.txtStatus);
     }
 
-    // metodo buscar livro
+    public void irParaMeusLivros(View view) {
+        Intent intent = new Intent(this, MeusLivrosActivity.class);
+        startActivity(intent);
+    }
+
     public void buscarLivro(View view) {
         String termoBusca = edtPesquisa.getText().toString().trim();
 
