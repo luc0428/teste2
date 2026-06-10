@@ -19,7 +19,8 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="Digite o título, autor ou palavra-chave"
-        android:minHeight="48dp" />
+        android:minHeight="48dp"
+        android:inputType="text" />
 
     <Button
         android:id="@+id/btnBuscar"
@@ -27,28 +28,28 @@
         android:layout_height="wrap_content"
         android:text="Pesquisar Livro"
         android:onClick="buscarLivro"
-        android:layout_marginTop="8dp"/>
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"/>
 
-    <Button
-        android:id="@+id/btnCadastrar"
+    <TextView
+        android:id="@+id/txtStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="Cadastrar este Livro com GPS"
-        android:onClick="irParaCadastro"
-        android:layout_marginTop="4dp"
-        android:layout_marginBottom="16dp"/>
+        android:text="Resultados:"
+        android:textSize="14sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="8dp"
+        android:visibility="gone"/>
 
     <ScrollView
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
+        android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/txtResultado"
+        <LinearLayout
+            android:id="@+id/containerResultados"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Os resultados aparecerão aqui..."
-            android:textSize="16sp" />
+            android:orientation="vertical" />
     </ScrollView>
 
 </LinearLayout>

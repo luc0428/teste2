@@ -1,10 +1,13 @@
 package com.example.teste2;
 
+import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.gson.Gson;
@@ -18,11 +21,8 @@ import java.net.URLEncoder;
 public class MainActivity extends AppCompatActivity {
 
     private EditText edtPesquisa;
-    private TextView txtResultado;
-
-    private String tituloUltimoLivro = "";
-    private String autorUltimoLivro = "";
-    private android.widget.Button btnIrParaCadastro;
+    private LinearLayout containerResultados;
+    private TextView txtStatus;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -30,100 +30,106 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         edtPesquisa = findViewById(R.id.edtPesquisa);
-        txtResultado = findViewById(R.id.txtResultado);
+        containerResultados = findViewById(R.id.containerResultados);
+        txtStatus = findViewById(R.id.txtStatus);
     }
 
-    // Metodo disparado pelo clique do Botão (Slide 15/16)
     public void buscarLivro(View view) {
         String termoBusca = edtPesquisa.getText().toString().trim();
 
         if (termoBusca.isEmpty()) {
-            txtResultado.setText("Por favor, insira um termo para buscar.");
+            Toast.makeText(this, "Por favor, insira um termo para buscar.", Toast.LENGTH_SHORT).show();
             return;
         }
 
-        txtResultado.setText("Buscando livros...");
+        txtStatus.setVisibility(View.VISIBLE);
+        txtStatus.setText("Buscando livros...");
+        containerResultados.removeAllViews();
 
-        // Nova thread paralela para requisição de rede (Slide 8)
         new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
-                    // Formata o termo digitado para evitar quebras na URL
                     String termoFormatado = URLEncoder.encode(termoBusca, "UTF-8");
-
-                    // Usando o endpoint estável da Open Library limitado a 3 resultados
-                    String urlString = "https://openlibrary.org/search.json?q=" + termoFormatado + "&limit=3";
+                    String urlString = "https://openlibrary.org/search.json?q=" + termoFormatado + "&limit=10";
 
                     URL url = new URL(urlString);
                     HttpURLConnection conexao = (HttpURLConnection) url.openConnection();
-                    conexao.setRequestMethod("GET"); // Metodo GET (Slide 16)
+                    conexao.setRequestMethod("GET");
                     conexao.setConnectTimeout(10000);
                     conexao.setReadTimeout(10000);
 
-                    int responseCode = conexao.getResponseCode(); // Status do servidor (Slide 17)
+                    int responseCode = conexao.getResponseCode();
 
-                    if (responseCode == 200) { // HTTP 200 OK (Slide 17)
-                        BufferedReader resposta = new BufferedReader(new InputStreamReader(conexao.getInputStream())); // (Slide 9)
+                    if (responseCode == 200) {
+                        BufferedReader resposta = new BufferedReader(new InputStreamReader(conexao.getInputStream()));
                         String aux;
                         StringBuilder jsonEmString = new StringBuilder();
 
-                        while ((aux = resposta.readLine()) != null) { // (Slide 9)
+                        while ((aux = resposta.readLine()) != null) {
                             jsonEmString.append(aux);
                         }
                         resposta.close();
 
-                        // Convertendo o JSON usando GSON (Slide 10)
                         Gson gson = new Gson();
                         ResultadoLivro resultadoApi = gson.fromJson(jsonEmString.toString(), ResultadoLivro.class);
 
-                        StringBuilder textoFormatado = new StringBuilder();
-
-                        if (resultadoApi != null && resultadoApi.getDocs() != null && !resultadoApi.getDocs().isEmpty()) {
-
-                            // Varre a lista de documentos retornados
-                            for (ResultadoLivro.BookDoc doc : resultadoApi.getDocs()) {
-
-                                textoFormatado.append(" Título: ").append(doc.getTitle() != null ? doc.getTitle() : "Sem título").append("\n");
-
-                                if (doc.getAuthorName() != null && !doc.getAuthorName().isEmpty()) {
-                                    textoFormatado.append("✍ Autor: ").append(doc.getAuthorName().get(0)).append("\n");
-                                } else {
-                                    textoFormatado.append("Autor: Desconhecido\n");
-                                }
-
-                                if (doc.getFirstSentence() != null && !doc.getFirstSentence().isEmpty()) {
-                                    String resumo = doc.getFirstSentence().get(0);
-                                    int limite = Math.min(resumo.length(), 130);
-                                    textoFormatado.append(" Fragmento: ").append(resumo.substring(0, limite)).append("...\n");
-                                } else {
-                                    textoFormatado.append(" Fragmento: Introdução indisponível para este exemplar.\n");
-                                }
-
-                                textoFormatado.append("\n---------------------\n\n");
-                            }
-                        } else {
-                            textoFormatado.append("Nenhum livro encontrado para este termo.");
-                        }
-
-                        // Modifica os elementos visuais na UI Thread (Slide 10)
-                        String finalTexto = textoFormatado.toString();
                         runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                txtResultado.setText(finalTexto); // (Slide 10)
+                                exibirResultados(resultadoApi);
                             }
                         });
 
                     } else {
-                        runOnUiThread(() -> txtResultado.setText("Erro no servidor de livros. Código HTTP: " + responseCode));
+                        runOnUiThread(() -> txtStatus.setText("Erro no servidor: " + responseCode));
                     }
 
-                } catch (Exception e) { // Tratamento contra falhas de conexão (Slide 11)
+                } catch (Exception e) {
                     e.printStackTrace();
-                    runOnUiThread(() -> txtResultado.setText("Erro de conexão: " + e.getMessage()));
+                    runOnUiThread(() -> txtStatus.setText("Erro de conexão: " + e.getMessage()));
                 }
             }
-        }).start(); // Inicializa a Thread (Slide 11)
+        }).start();
+    }
+
+    private void exibirResultados(ResultadoLivro resultadoApi) {
+        if (resultadoApi == null || resultadoApi.getDocs() == null || resultadoApi.getDocs().isEmpty()) {
+            txtStatus.setText("Nenhum livro encontrado.");
+            return;
+        }
+
+        txtStatus.setText("Resultados encontrados:");
+        LayoutInflater inflater = LayoutInflater.from(this);
+
+        for (ResultadoLivro.BookDoc doc : resultadoApi.getDocs()) {
+            View itemView = inflater.inflate(R.layout.item_livro, containerResultados, false);
+            
+            TextView txtTitulo = itemView.findViewById(R.id.txtTituloItem);
+            TextView txtAutor = itemView.findViewById(R.id.txtAutorItem);
+
+            String titulo = doc.getTitle() != null ? doc.getTitle() : "Sem título";
+            String autor = (doc.getAuthorName() != null && !doc.getAuthorName().isEmpty()) 
+                            ? doc.getAuthorName().get(0) : "Autor Desconhecido";
+            
+            txtTitulo.setText(titulo);
+            txtAutor.setText(autor);
+
+            // Clique para abrir detalhes
+            itemView.setOnClickListener(v -> {
+                Intent intent = new Intent(MainActivity.this, DetalhesLivroActivity.class);
+                intent.putExtra("titulo", titulo);
+                intent.putExtra("autor", autor);
+                
+                String editora = (doc.getPublisher() != null && !doc.getPublisher().isEmpty()) 
+                                ? doc.getPublisher().get(0) : "Indisponível";
+                intent.putExtra("editora", editora);
+                intent.putExtra("ano", doc.getFirstPublishYear());
+                
+                startActivity(intent);
+            });
+
+            containerResultados.addView(itemView);
+        }
     }
 }

@@ -26,6 +26,10 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name=".DetalhesLivroActivity"
+            android:label="Detalhes do Livro"
+            android:parentActivityName=".MainActivity" />
 
     </application>
 
