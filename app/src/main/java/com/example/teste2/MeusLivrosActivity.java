@@ -9,7 +9,10 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.GeoPoint;
 import com.google.firebase.firestore.QueryDocumentSnapshot;
+
+import java.util.Locale;
 
 public class MeusLivrosActivity extends AppCompatActivity {
 
@@ -48,13 +51,23 @@ public class MeusLivrosActivity extends AppCompatActivity {
 
                         TextView txtTitulo = itemView.findViewById(R.id.txtTituloItem);
                         TextView txtAutor = itemView.findViewById(R.id.txtAutorItem);
+                        TextView txtLoc = itemView.findViewById(R.id.txtLocalizacaoItem);
 
                         String titulo = document.getString("titulo");
                         String autores = document.getString("autores");
                         String status = document.getString("statusLeitura");
+                        GeoPoint loc = document.getGeoPoint("localizacao");
 
                         txtTitulo.setText(titulo != null ? titulo : "Sem título");
                         txtAutor.setText((autores != null ? autores : "Autor desconhecido") + " - [" + status + "]");
+                        
+                        if (loc != null) {
+                            txtLoc.setText(String.format(Locale.getDefault(), "📍 Localização: Lat %.2f, Lon %.2f", 
+                                    loc.getLatitude(), loc.getLongitude()));
+                            txtLoc.setVisibility(View.VISIBLE);
+                        } else {
+                            txtLoc.setVisibility(View.GONE);
+                        }
 
                         itemView.setOnClickListener(v -> {
                             String detalhe = "Editora: " + document.getString("editora") + 

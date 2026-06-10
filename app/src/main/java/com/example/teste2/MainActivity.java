@@ -120,6 +120,10 @@ public class MainActivity extends AppCompatActivity {
             txtTitulo.setText(titulo);
             txtAutor.setText(autor);
 
+            // Esconder localização na busca, pois só existe no Firebase
+            View txtLoc = itemView.findViewById(R.id.txtLocalizacaoItem);
+            if (txtLoc != null) txtLoc.setVisibility(View.GONE);
+
             // Clique para abrir detalhes
             itemView.setOnClickListener(v -> {
                 Intent intent = new Intent(MainActivity.this, DetalhesLivroActivity.class);
