@@ -57,7 +57,7 @@ public class MainActivity extends AppCompatActivity {
 
                     URL url = new URL(urlString);
                     HttpURLConnection conexao = (HttpURLConnection) url.openConnection();
-                    conexao.setRequestMethod("GET"); // Método GET (Slide 16)
+                    conexao.setRequestMethod("GET"); // Metodo GET (Slide 16)
                     conexao.setConnectTimeout(10000);
                     conexao.setReadTimeout(10000);
 
